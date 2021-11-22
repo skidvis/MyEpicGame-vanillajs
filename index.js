@@ -10,6 +10,12 @@ var characterNFT;
 
 const isLoaded = () => {
     console.log('This is a vanillajs (plain old javascript) implementation of the nft-game-starter project.');
+    var btn = document.getElementById('btn-mint');
+    btn.addEventListener('click', ()=> {mintCharacterNFTAction(0)});
+}
+
+const NftMinted = (address, tokenId, characterId)=> {
+    console.log('Minted! %s %s %s', address, tokenId, characterId);
 }
 
 const checkforWallet = async () => {
@@ -43,6 +49,7 @@ const fetchNFTMeta = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     gameContract = new ethers.Contract(CONTRACT_ADDRESS,myEpicGame.abi,signer);
+    gameContract.on('NftMinted', NftMinted);
 
     const txn = await gameContract.getUserNFT();
     console.log(txn);
@@ -59,6 +66,13 @@ const showLogin = () => {
     var btn = document.createElement('button');
     btn.innerText = 'Login';
     btn.addEventListener('click', ()=>{connectWallet()});
+    app.appendChild(btn);
+}
+
+const showMint = () => {    
+    var btn = document.createElement('button');
+    btn.innerText = 'Mint';
+    btn.addEventListener('click', ()=>{mintCharacterNFTAction(0)});
     app.appendChild(btn);
 }
 
@@ -95,6 +109,20 @@ const showMinter = () => {
     img.src = characterNFT.imageUri;
     app.appendChild(img);
 }
+
+const mintCharacterNFTAction = async (characterId) =>  {
+    console.log('clickkk');
+    try {
+      if (gameContract) {
+        console.log('Minting character in progress...');
+        const mintTxn = await gameContract.mintCharacterNFT(characterId);
+        await mintTxn.wait();
+        console.log('mintTxn:', mintTxn);
+      }
+    } catch (error) {
+      console.warn('MintCharacterAction Error:', error);
+    }
+};
 
 const getCharacters = async () => {
     try {
