@@ -6,7 +6,7 @@ import myEpicGame from './MyEpicGame.js';
 // alternatively, 'import assertion' works in chrome, but it's not ready on firefox yet.
 
 //bring in our contract address and that transform method
-import {CONTRACT_ADDRESS, transformCharacterData} from "./utils.js";
+import {CONTRACT_ADDRESS, transformCharacterData, transformBossData} from "./utils.js";
 
 //set up some global variables
 var gameContract = null;
@@ -44,7 +44,7 @@ const showSection = (name, shouldShow = true) => {
 //this is the callback for a minted nft.. 
 const NftMinted = (address, tokenId, characterId)=> {
     hideSwal(); //I use SweetAlert2 for fancy pop-ups.. this just closes any open pop-up
-    runLogic();
+    fetchNFTMeta();
     showSection('arena-section'); //shows the arena after a minting
 }
 
@@ -78,8 +78,6 @@ const checkforWallet = async () => {
 //sets up the contract object and assigns callbacks
 //also sees if the user has an NFT and assigns it to characterNFT
 const fetchNFTMeta = async () => {
-    if(gameContract != null) return;
-
     console.log('Checking for NFT at address:', currentAccount);
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -107,8 +105,8 @@ const fetchNFTMeta = async () => {
 //this gets the player div on the frontend and updates its values
 const updatePlayerUi = () => {
     var el = document.getElementById('player-nft');
-    var playerText = `${characterNFT.name} - <a href="https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/6">opensea</a>`;
-    el.querySelector('.player-name').innerText = characterNFT.name;
+    var playerText = `${characterNFT.name} - <a target="new" href="https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/${characterNFT.tokenId}">opensea</a>`;
+    el.querySelector('.player-name').innerHTML = playerText;
     el.querySelector('.player-image').src = characterNFT.imageUri;        
     el.querySelector('.player-hp').innerText = `Health: ${characterNFT.hp}/${characterNFT.maxHp}`;
 }
@@ -204,7 +202,7 @@ const getCharacters = async () => {
 const fetchBoss = async () => {
     const bossTxn = await gameContract.getBigBoss();
     console.log('Boss:', bossTxn);
-    boss = transformCharacterData(bossTxn);
+    boss = transformBossData(bossTxn);
     updateBossUi();
 };
 

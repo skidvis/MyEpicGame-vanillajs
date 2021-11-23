@@ -1,4 +1,4 @@
-const CONTRACT_ADDRESS = '0x980D4435a72E1aCB108dBB93dB7e42d9bBDB2d5d';
+const CONTRACT_ADDRESS = '0x4342135Dc8E238B7e3ae20f931dbB2208e827192';
 
 const transformCharacterData = (characterData) => {
   return {
@@ -7,7 +7,18 @@ const transformCharacterData = (characterData) => {
     hp: characterData.hp.toNumber(),
     maxHp: characterData.maxHp.toNumber(),
     attackDamage: characterData.attackDamage.toNumber(),
+    tokenId: characterData.tokenId.toNumber()
   };
 };
 
-export { CONTRACT_ADDRESS, transformCharacterData };
+const transformBossData = (characterData) => {
+    return {
+      name: characterData.name,
+      imageUri: characterData.imageUri,
+      hp: characterData.hp.toNumber(),
+      maxHp: characterData.maxHp.toNumber(),
+      attackDamage: characterData.attackDamage.toNumber()
+    };
+  };
+
+export { CONTRACT_ADDRESS, transformCharacterData, transformBossData };
