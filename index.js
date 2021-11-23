@@ -44,6 +44,7 @@ const showSection = (name, shouldShow = true) => {
 //this is the callback for a minted nft.. 
 const NftMinted = (address, tokenId, characterId)=> {
     hideSwal(); //I use SweetAlert2 for fancy pop-ups.. this just closes any open pop-up
+    runLogic();
     showSection('arena-section'); //shows the arena after a minting
 }
 
