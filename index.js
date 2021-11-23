@@ -11,8 +11,11 @@ var currentAccount = null;
 var characterNFT = null;
 var boss = null;
 
+var calledbackReset = false;
+
 var resetButton = document.getElementById('reset-button');
 var attackButton = document.getElementById('attack-button');
+var restartLink = document.getElementById('restart-link');
 
 const isLoaded = () => {
     console.log('This is a vanillajs (plain old javascript) implementation of the nft-game-starter project.');
@@ -48,6 +51,7 @@ const checkforWallet = async () => {
             return;
         }else{
             console.log('We have the ethereum object!');
+            if(currentAccount != null) return;
 
             const accounts = await ethereum.request({method: 'eth_accounts'});
 
@@ -65,6 +69,8 @@ const checkforWallet = async () => {
 };
 
 const fetchNFTMeta = async () => {
+    if(gameContract != null) return;
+
     console.log('Checking for NFT at address:', currentAccount);
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -72,6 +78,7 @@ const fetchNFTMeta = async () => {
     gameContract = new ethers.Contract(CONTRACT_ADDRESS,myEpicGame.abi,signer);
 
     // listen to emit events
+    gameContract.removeAllListeners();
     gameContract.on('NftMinted', NftMinted);
     gameContract.on('AttackComplete', AttackComplete);
     gameContract.on('ResetHealth', onResetHealth);
@@ -255,8 +262,16 @@ const onResetHealth = (newBossHp, newPlayerHp) => {
     hideSwal();
     const bossHp = newBossHp.toNumber();
     const playerHp = newPlayerHp.toNumber();
+    boss.hp = bossHp;
+    characterNFT.hp = playerHp;
+
+    updatePlayerUi();
+    updateBossUi();
+    
     console.log(`Healths reset.. ${newBossHp} and ${newPlayerHp}`);
-    location.reload();
+    resetButton.classList.add('d-none');
+    attackButton.classList.remove('d-none');
+    document.getElementById('win-h1').classList.add('d-none');        
 };
 
 const runLogic = () => {
