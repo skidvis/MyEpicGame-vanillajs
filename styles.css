@@ -1,0 +1,12 @@
+.section{
+    text-align: center;
+}
+
+.mint-template ul{
+    padding:0;
+    margin: 0;
+}
+
+.mint-template ul li, #arena-section ul li{
+    list-style-type: none;
+}

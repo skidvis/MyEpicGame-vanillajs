@@ -1,17 +1,26 @@
 import { ethers } from "./ethers-5.2.esm.min.js";
-import myEpicGame from './MyEpicGame.json' assert { type: "json" };
+// rename the json file to .js and add 'export default' to the top line
+import myEpicGame from './MyEpicGame.js';
+// alternatively, 'import assertion' works in chrome, but it's not ready on firefox yet.
+
 import {CONTRACT_ADDRESS, transformCharacterData} from "./utils.js";
 
-var app = document.getElementById('app');
-var gameContract;
-var characters;
-var currentAccount;
-var characterNFT;
+var gameContract = null;
+var characters = null;
+var currentAccount = null;
+var characterNFT = null;
+var boss = null;
+
+var resetButton = document.getElementById('reset-button');
+var attackButton = document.getElementById('attack-button');
 
 const isLoaded = () => {
     console.log('This is a vanillajs (plain old javascript) implementation of the nft-game-starter project.');
     document.getElementById('login-button').addEventListener('click', ()=>{connectWallet()});
-    document.getElementById('mint-button').addEventListener('click', ()=> {mintCharacterNFTAction(0)});
+    attackButton.addEventListener('click', ()=>{
+        if(boss.hp > 0) runAttackAction();
+    });    
+    resetButton.addEventListener('click', ()=>{ResetHealth()});
 }
 
 const showSection = (name, shouldShow = true) => {
@@ -26,7 +35,8 @@ const showSection = (name, shouldShow = true) => {
 }
 
 const NftMinted = (address, tokenId, characterId)=> {
-    console.log('Minted! %s %s %s', address, tokenId, characterId);
+    hideSwal();
+    document.location = ""
 }
 
 const checkforWallet = async () => {
@@ -60,7 +70,11 @@ const fetchNFTMeta = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     gameContract = new ethers.Contract(CONTRACT_ADDRESS,myEpicGame.abi,signer);
+
+    // listen to emit events
     gameContract.on('NftMinted', NftMinted);
+    gameContract.on('AttackComplete', AttackComplete);
+    gameContract.on('ResetHealth', onResetHealth);
 
     const txn = await gameContract.getUserNFT();
     console.log(txn);
@@ -68,10 +82,18 @@ const fetchNFTMeta = async () => {
     if(txn.name){
         console.log('User has an NFT');
         characterNFT = transformCharacterData(txn);
+        updatePlayerUi();
     }else{
         console.log('No NFT found');
     }
 };  
+
+const updatePlayerUi = () => {
+    var el = document.getElementById('player-nft');
+    el.querySelector('.player-name').innerText = characterNFT.name;
+    el.querySelector('.player-image').src = characterNFT.imageUri;        
+    el.querySelector('.player-hp').innerText = `Health: ${characterNFT.hp}/${characterNFT.maxHp}`;
+}
 
 const showLogin = () => {    
     showSection('login-section');
@@ -79,6 +101,8 @@ const showLogin = () => {
 
 const connectWallet = async () => {
     try{
+      if(currentAccount != null) return;
+      
       const {ethereum} = window;
 
       if(!ethereum){
@@ -92,7 +116,6 @@ const connectWallet = async () => {
 
       console.log('Connected', accounts[0]);
       currentAccount = accounts[0];
-      runLogic();
     }catch(error){
       console.log(error);
     }
@@ -103,23 +126,21 @@ const showNFT = () => {
 }
 
 const showMinter = () => {
-    console.log('showing minter');
-    var img = document.createElement('img');
-    img.src = characterNFT.imageUri;
-    app.appendChild(img);
+    showSection('mint-section');
 }
 
 const mintCharacterNFTAction = async (characterId) =>  {
-    console.log('clickkk');
     try {
       if (gameContract) {
-        console.log('Minting character in progress...');
+        showSwal('Minting that badboy...');
+        console.log(`Minting character ${characterId} in progress...`);
         const mintTxn = await gameContract.mintCharacterNFT(characterId);
         await mintTxn.wait();
         console.log('mintTxn:', mintTxn);
       }
     } catch (error) {
       console.warn('MintCharacterAction Error:', error);
+      hideSwal();
     }
 };
 
@@ -134,13 +155,113 @@ const getCharacters = async () => {
         transformCharacterData(characterData)
       );
 
+      if(characters != null){
+          var section = document.getElementById('mint-section');
+          var template = document.getElementById('mint-template');
+          characters.forEach((char, index) => {
+            var el = template.cloneNode(true);
+            el.querySelector('.character-name').innerText = char.name;
+            el.querySelector('.character-image').src = char.imageUri;
+            el.querySelector('.character-mint').addEventListener('click', ()=> {mintCharacterNFTAction(index)});
+            el.querySelector('.character-mint').innerText = `Mint ${char.name}`;
+            el.style.display = 'inline-block';
+            section.appendChild(el);
+          })
+      }
+
     } catch (error) {
       console.error('Something went wrong fetching characters:', error);
     }
 };
 
+const fetchBoss = async () => {
+    const bossTxn = await gameContract.getBigBoss();
+    console.log('Boss:', bossTxn);
+    boss = transformCharacterData(bossTxn);
+    updateBossUi();
+};
+
+const updateBossUi = () => {
+    var el = document.getElementById('boss-nft');
+    el.querySelector('.boss-name').innerText = boss.name;
+    el.querySelector('.boss-image').src = boss.imageUri;
+    el.querySelector('.boss-hp').innerText = `Health: ${boss.hp}/${boss.maxHp}`;    
+    showButtons();
+}
+
+const runAttackAction = async () => {
+    try {
+      if (gameContract) {
+        showSwal('Attacking that sumbich!');  
+        console.log('Attacking boss...');
+        const attackTxn = await gameContract.attackBoss();
+        await attackTxn.wait();
+        console.log('attackTxn:', attackTxn);          
+      }
+    } catch (error) {
+      console.error('Error attacking boss:', error);
+      hideSwal();
+    }    
+};
+
+const AttackComplete = (newBossHp, newPlayerHp) => {
+    hideSwal();
+    const bossHp = newBossHp.toNumber();
+    const playerHp = newPlayerHp.toNumber();
+
+    Swal.fire(
+        'Good job!',
+        `AttackComplete: Boss Hp: ${bossHp} Player Hp: ${playerHp}`,
+        'success'
+      )
+    console.log(`AttackComplete: Boss Hp: ${bossHp} Player Hp: ${playerHp}`);
+
+    /*
+    * Update both player and boss Hp
+    */
+    boss.hp = bossHp;
+    characterNFT.hp = playerHp;
+    
+    updateBossUi();
+    updatePlayerUi();
+};
+
+const showButtons = () => {
+    console.log(boss);
+    if(boss.hp == 0){
+        attackButton.classList.add('d-none');
+        resetButton.classList.remove('d-none');
+        document.getElementById('win-h1').classList.remove('d-none');
+    }else{
+        attackButton.classList.remove('d-none');
+        resetButton.classList.add('d-none');
+        document.getElementById('win-h1').classList.add('d-none');        
+    };
+}
+
+const ResetHealth = async () => {
+    try{
+        const txn = await gameContract.resetHealth();
+        console.log('Resetting Health:', txn);
+        showSwal('Resetting Health...');
+    }catch (error){
+        hideSwal();
+        console.log(error);
+    }
+};
+
+const onResetHealth = (newBossHp, newPlayerHp) => {
+    hideSwal();
+    const bossHp = newBossHp.toNumber();
+    const playerHp = newPlayerHp.toNumber();
+    console.log(`Healths reset.. ${newBossHp} and ${newPlayerHp}`);
+    location.reload();
+};
+
 const runLogic = () => {
     checkforWallet().then(()=>{
+        showSwal('loading..');
+
         //if not authenticated, show login button
         if(currentAccount == null) showLogin();
         
@@ -150,7 +271,10 @@ const runLogic = () => {
             if(gameContract == null) return;
 
             //get all the NFT characters
-            if(gameContract != null){ getCharacters() }; 
+            if(gameContract != null){ 
+                if(characters == null) getCharacters();
+                if(boss == null) fetchBoss(); 
+            }; 
 
             //If no character minted, show mint screen
             if(characterNFT == null){ showMinter() };
@@ -158,7 +282,25 @@ const runLogic = () => {
             //If character exists, show image
             if(characterNFT != null){ showNFT() }; 
         });
+
+        hideSwal();
     });     
+}
+
+const showSwal = (msg) => {
+    Swal.fire({
+        title: msg,
+        imageUrl: 'loading.gif',
+                imageWidth: 384,
+                imageHeight: 215,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      })    
+}
+
+const hideSwal = () => {
+    Swal.close();
 }
 
 //do this when the page loads
@@ -167,5 +309,5 @@ document.addEventListener("DOMContentLoaded", function() {
     isLoaded();
 
     //check for metamask
-    runLogic();
+    if(gameContract == null) runLogic();
 });
