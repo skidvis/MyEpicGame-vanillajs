@@ -10,8 +10,19 @@ var characterNFT;
 
 const isLoaded = () => {
     console.log('This is a vanillajs (plain old javascript) implementation of the nft-game-starter project.');
-    var btn = document.getElementById('btn-mint');
-    btn.addEventListener('click', ()=> {mintCharacterNFTAction(0)});
+    document.getElementById('login-button').addEventListener('click', ()=>{connectWallet()});
+    document.getElementById('mint-button').addEventListener('click', ()=> {mintCharacterNFTAction(0)});
+}
+
+const showSection = (name, shouldShow = true) => {
+    console.log('showing: %s', name);
+    var sections = document.getElementsByClassName('section');
+    for (var i = 0; i < sections.length; i++) {
+        sections[i].classList.add('d-none');
+    }
+
+    var el = document.getElementById(name);
+    shouldShow ? el.classList.remove('d-none') : el.classList.add('d-none');
 }
 
 const NftMinted = (address, tokenId, characterId)=> {
@@ -26,7 +37,7 @@ const checkforWallet = async () => {
             console.log('Make sure you have metamask!');
             return;
         }else{
-            console.log('We have the ethereum object!', ethereum);
+            console.log('We have the ethereum object!');
 
             const accounts = await ethereum.request({method: 'eth_accounts'});
 
@@ -63,17 +74,7 @@ const fetchNFTMeta = async () => {
 };  
 
 const showLogin = () => {    
-    var btn = document.createElement('button');
-    btn.innerText = 'Login';
-    btn.addEventListener('click', ()=>{connectWallet()});
-    app.appendChild(btn);
-}
-
-const showMint = () => {    
-    var btn = document.createElement('button');
-    btn.innerText = 'Mint';
-    btn.addEventListener('click', ()=>{mintCharacterNFTAction(0)});
-    app.appendChild(btn);
+    showSection('login-section');
 }
 
 const connectWallet = async () => {
@@ -91,16 +92,14 @@ const connectWallet = async () => {
 
       console.log('Connected', accounts[0]);
       currentAccount = accounts[0];
+      runLogic();
     }catch(error){
       console.log(error);
     }
 }
 
-const showImage = () => {
-    console.log(characterNFT.imageUri);
-    var img = document.createElement('img');
-    img.src = characterNFT.imageUri;
-    app.appendChild(img);
+const showNFT = () => {
+    showSection('arena-section');
 }
 
 const showMinter = () => {
@@ -140,12 +139,7 @@ const getCharacters = async () => {
     }
 };
 
-//do this when the page loads
-document.addEventListener("DOMContentLoaded", function() {
-    //say hello
-    isLoaded();
-
-    //check for metamask
+const runLogic = () => {
     checkforWallet().then(()=>{
         //if not authenticated, show login button
         if(currentAccount == null) showLogin();
@@ -162,7 +156,16 @@ document.addEventListener("DOMContentLoaded", function() {
             if(characterNFT == null){ showMinter() };
 
             //If character exists, show image
-            if(characterNFT != null){ showImage() }; 
+            if(characterNFT != null){ showNFT() }; 
         });
-    });    
+    });     
+}
+
+//do this when the page loads
+document.addEventListener("DOMContentLoaded", function() {
+    //say hello
+    isLoaded();
+
+    //check for metamask
+    runLogic();
 });
