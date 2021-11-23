@@ -36,7 +36,7 @@ const showSection = (name, shouldShow = true) => {
 
 const NftMinted = (address, tokenId, characterId)=> {
     hideSwal();
-    document.location = ""
+    runLogic();
 }
 
 const checkforWallet = async () => {
