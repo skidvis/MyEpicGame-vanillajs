@@ -107,6 +107,7 @@ const fetchNFTMeta = async () => {
 //this gets the player div on the frontend and updates its values
 const updatePlayerUi = () => {
     var el = document.getElementById('player-nft');
+    var playerText = `${characterNFT.name} - <a href="https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/6">opensea</a>`;
     el.querySelector('.player-name').innerText = characterNFT.name;
     el.querySelector('.player-image').src = characterNFT.imageUri;        
     el.querySelector('.player-hp').innerText = `Health: ${characterNFT.hp}/${characterNFT.maxHp}`;
