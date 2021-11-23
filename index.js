@@ -1,22 +1,25 @@
+//impot the ethers.js stuff
 import { ethers } from "./ethers-5.2.esm.min.js";
-// rename the json file to .js and add 'export default' to the top line
+
+// rename the solidity json file to .js and add 'export default' to the top line
 import myEpicGame from './MyEpicGame.js';
 // alternatively, 'import assertion' works in chrome, but it's not ready on firefox yet.
 
+//bring in our contract address and that transform method
 import {CONTRACT_ADDRESS, transformCharacterData} from "./utils.js";
 
+//set up some global variables
 var gameContract = null;
 var characters = null;
 var currentAccount = null;
 var characterNFT = null;
 var boss = null;
 
-var calledbackReset = false;
-
+//get some references to buttons we're gonna need
 var resetButton = document.getElementById('reset-button');
 var attackButton = document.getElementById('attack-button');
-var restartLink = document.getElementById('restart-link');
 
+//this method will be the first to run, it logs a message and sets up listeners for the button clicks.
 const isLoaded = () => {
     console.log('This is a vanillajs (plain old javascript) implementation of the nft-game-starter project.');
     document.getElementById('login-button').addEventListener('click', ()=>{connectWallet()});
@@ -26,6 +29,7 @@ const isLoaded = () => {
     resetButton.addEventListener('click', ()=>{ResetHealth()});
 }
 
+//this just hides and shows divs as we need.
 const showSection = (name, shouldShow = true) => {
     console.log('showing: %s', name);
     var sections = document.getElementsByClassName('section');
@@ -37,11 +41,13 @@ const showSection = (name, shouldShow = true) => {
     shouldShow ? el.classList.remove('d-none') : el.classList.add('d-none');
 }
 
+//this is the callback for a minted nft.. 
 const NftMinted = (address, tokenId, characterId)=> {
-    hideSwal();
-    runLogic();
+    hideSwal(); //I use SweetAlert2 for fancy pop-ups.. this just closes any open pop-up
+    runLogic(); //this is where the, uh.. main logic is?
 }
 
+//check for metamask and assign an account to currentAccount
 const checkforWallet = async () => {
     try{
         const { ethereum } = window;
@@ -68,6 +74,8 @@ const checkforWallet = async () => {
     }
 };
 
+//sets up the contract object and assigns callbacks
+//also sees if the user has an NFT and assigns it to characterNFT
 const fetchNFTMeta = async () => {
     if(gameContract != null) return;
 
@@ -95,6 +103,7 @@ const fetchNFTMeta = async () => {
     }
 };  
 
+//this gets the player div on the frontend and updates its values
 const updatePlayerUi = () => {
     var el = document.getElementById('player-nft');
     el.querySelector('.player-name').innerText = characterNFT.name;
@@ -102,10 +111,12 @@ const updatePlayerUi = () => {
     el.querySelector('.player-hp').innerText = `Health: ${characterNFT.hp}/${characterNFT.maxHp}`;
 }
 
+//this shows the login button div
 const showLogin = () => {    
     showSection('login-section');
 }
 
+//this is the "login" part.. connects the wallet and assigns the currentAccount
 const connectWallet = async () => {
     try{
       if(currentAccount != null) return;
@@ -129,14 +140,17 @@ const connectWallet = async () => {
     }
 }
 
+//this shows the battle div is we have a character and a boss
 const showNFT = () => {
     showSection('arena-section');
 }
 
+//this shows the "choose your fighter" screen
 const showMinter = () => {
     showSection('mint-section');
 }
 
+//this mints our chosen character
 const mintCharacterNFTAction = async (characterId) =>  {
     try {
       if (gameContract) {
@@ -152,6 +166,8 @@ const mintCharacterNFTAction = async (characterId) =>  {
     }
 };
 
+//this gets all available mintable characters
+//and adds them to the divs
 const getCharacters = async () => {
     try {
       console.log('Getting contract characters to mint');
@@ -182,6 +198,7 @@ const getCharacters = async () => {
     }
 };
 
+//this gets our boss character and updates his ui
 const fetchBoss = async () => {
     const bossTxn = await gameContract.getBigBoss();
     console.log('Boss:', bossTxn);
@@ -189,6 +206,7 @@ const fetchBoss = async () => {
     updateBossUi();
 };
 
+//this does the boss ui updating 
 const updateBossUi = () => {
     var el = document.getElementById('boss-nft');
     el.querySelector('.boss-name').innerText = boss.name;
@@ -197,6 +215,7 @@ const updateBossUi = () => {
     showButtons();
 }
 
+//here we call our attack method
 const runAttackAction = async () => {
     try {
       if (gameContract) {
@@ -212,6 +231,7 @@ const runAttackAction = async () => {
     }    
 };
 
+//this is the callback for the attack
 const AttackComplete = (newBossHp, newPlayerHp) => {
     hideSwal();
     const bossHp = newBossHp.toNumber();
@@ -224,9 +244,6 @@ const AttackComplete = (newBossHp, newPlayerHp) => {
       )
     console.log(`AttackComplete: Boss Hp: ${bossHp} Player Hp: ${playerHp}`);
 
-    /*
-    * Update both player and boss Hp
-    */
     boss.hp = bossHp;
     characterNFT.hp = playerHp;
     
@@ -234,6 +251,7 @@ const AttackComplete = (newBossHp, newPlayerHp) => {
     updatePlayerUi();
 };
 
+//this determines which button should be shown.. attack, or reset if the boss dies
 const showButtons = () => {
     console.log(boss);
     if(boss.hp == 0){
@@ -247,6 +265,7 @@ const showButtons = () => {
     };
 }
 
+//this calls a method I made which restore the player and boss health
 const ResetHealth = async () => {
     try{
         const txn = await gameContract.resetHealth();
@@ -258,6 +277,7 @@ const ResetHealth = async () => {
     }
 };
 
+//this is a callback for when the health is restored
 const onResetHealth = (newBossHp, newPlayerHp) => {
     hideSwal();
     const bossHp = newBossHp.toNumber();
@@ -274,6 +294,7 @@ const onResetHealth = (newBossHp, newPlayerHp) => {
     document.getElementById('win-h1').classList.add('d-none');        
 };
 
+//the main logic
 const runLogic = () => {
     checkforWallet().then(()=>{
         showSwal('loading..');
@@ -295,7 +316,7 @@ const runLogic = () => {
             //If no character minted, show mint screen
             if(characterNFT == null){ showMinter() };
 
-            //If character exists, show image
+            //If character exists, show fight arena
             if(characterNFT != null){ showNFT() }; 
         });
 
@@ -303,6 +324,7 @@ const runLogic = () => {
     });     
 }
 
+//this is how we call SweetAlert2
 const showSwal = (msg) => {
     Swal.fire({
         title: msg,
@@ -315,6 +337,7 @@ const showSwal = (msg) => {
       })    
 }
 
+//this closes SweetAlert pop-ups
 const hideSwal = () => {
     Swal.close();
 }
