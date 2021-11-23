@@ -116,6 +116,7 @@ const connectWallet = async () => {
 
       console.log('Connected', accounts[0]);
       currentAccount = accounts[0];
+      runLogic();
     }catch(error){
       console.log(error);
     }
@@ -309,5 +310,5 @@ document.addEventListener("DOMContentLoaded", function() {
     isLoaded();
 
     //check for metamask
-    if(gameContract == null) runLogic();
+    runLogic();
 });
