@@ -10,3 +10,7 @@
 .mint-template ul li, #arena-section ul li{
     list-style-type: none;
 }
+
+.gray-text, .gray-text a{
+    color: #aaa;
+}
