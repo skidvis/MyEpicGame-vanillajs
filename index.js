@@ -15,6 +15,10 @@ var currentAccount = null;
 var characterNFT = null;
 var boss = null;
 
+var shouldListenForAttack = true;
+var shouldListenForHeals = true;
+var shouldListenForMint = true;
+
 //get some references to buttons we're gonna need
 var resetButton = document.getElementById('reset-button');
 var attackButton = document.getElementById('attack-button');
@@ -43,6 +47,12 @@ const showSection = (name, shouldShow = true) => {
 
 //this is the callback for a minted nft.. 
 const NftMinted = (address, tokenId, characterId)=> {
+    if(shouldListenForMint){
+        shouldListenForMint = false;
+    }else{
+        return;
+    };
+
     hideSwal(); //I use SweetAlert2 for fancy pop-ups.. this just closes any open pop-up
     fetchNFTMeta();
     showSection('arena-section'); //shows the arena after a minting
@@ -154,6 +164,7 @@ const showMinter = () => {
 const mintCharacterNFTAction = async (characterId) =>  {
     try {
       if (gameContract) {
+        shouldListenForMint = true;
         showSwal('Minting that badboy...');
         console.log(`Minting character ${characterId} in progress...`);
         const mintTxn = await gameContract.mintCharacterNFT(characterId);
@@ -161,6 +172,7 @@ const mintCharacterNFTAction = async (characterId) =>  {
         console.log('mintTxn:', mintTxn);
       }
     } catch (error) {
+      shouldListenForMint = false;
       console.warn('MintCharacterAction Error:', error);
       hideSwal();
     }
@@ -219,6 +231,7 @@ const updateBossUi = () => {
 const runAttackAction = async () => {
     try {
       if (gameContract) {
+        shouldListenForAttack = true;
         showSwal('Attacking that sumbich!');  
         console.log('Attacking boss...');
         const attackTxn = await gameContract.attackBoss();
@@ -226,6 +239,7 @@ const runAttackAction = async () => {
         console.log('attackTxn:', attackTxn);          
       }
     } catch (error) {
+      shouldListenForAttack = false;
       console.error('Error attacking boss:', error);
       hideSwal();
     }    
@@ -233,6 +247,12 @@ const runAttackAction = async () => {
 
 //this is the callback for the attack
 const AttackComplete = (newBossHp, newPlayerHp) => {
+    if(shouldListenForAttack){
+        shouldListenForAttack = false;
+    }else{
+        return;
+    };
+
     hideSwal();
     const bossHp = newBossHp.toNumber();
     const playerHp = newPlayerHp.toNumber();
@@ -268,10 +288,12 @@ const showButtons = () => {
 //this calls a method I made which restore the player and boss health
 const ResetHealth = async () => {
     try{
+        shouldListenForHeals = true;
         const txn = await gameContract.resetHealth();
         console.log('Resetting Health:', txn);
         showSwal('Resetting Health...');
     }catch (error){
+        shouldListenForHeals = false;
         hideSwal();
         console.log(error);
     }
@@ -279,6 +301,12 @@ const ResetHealth = async () => {
 
 //this is a callback for when the health is restored
 const onResetHealth = (newBossHp, newPlayerHp) => {
+    if(shouldListenForHeals){
+        shouldListenForHeals = false;
+    }else{
+        return;
+    };
+
     hideSwal();
     const bossHp = newBossHp.toNumber();
     const playerHp = newPlayerHp.toNumber();
