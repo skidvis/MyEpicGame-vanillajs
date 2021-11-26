@@ -8,4 +8,7 @@ Here's a video of the interface in action:
 https://youtu.be/7FuybnH82yY
 
 
+Try it out at: [http://www.sharkjets.com/MyEpicGame-vanillajs/](http://www.sharkjets.com/MyEpicGame-vanillajs/)
 
+
+also available in Vue 3.x @ [https://github.com/skidvis/MyEpicGame-vue](https://github.com/skidvis/MyEpicGame-vue)
